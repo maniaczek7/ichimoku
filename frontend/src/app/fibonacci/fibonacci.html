@@ -1,0 +1,443 @@
+<app-nav-bar active="fibonacci"></app-nav-bar>
+<div class="fibonacci">
+  <header class="header">
+    <div class="header-brand">
+      <div class="logo-mark"></div>
+      <div class="brand-text">
+        <h1>FIBONACCI <span>IMPULSE</span></h1>
+        <p class="tagline">D1 &middot; Impulsy + Retracementy &middot; GPW &middot; US &middot; FOREX</p>
+      </div>
+    </div>
+
+    <div class="header-actions">
+      <div class="filter-bar">
+        @if (f.marketDirty()) {
+          <button class="clear-btn" (click)="f.clearMarketFilters()" title="Resetuj filtry">
+            <svg viewBox="0 0 24 24" fill="currentColor"><path d="M19.36 2.72l1.42 1.42-5.72 5.71c1.07 1.54 1.22 3.39.32 4.59L9.06 8.12c1.2-.9 3.05-.75 4.59.32l5.71-5.72zM5.93 17.57c-2.01-2.01-3.24-4.41-3.58-6.65l4.88-2.09 7.44 7.44-2.09 4.88c-2.24-.34-4.64-1.57-6.65-3.58z"/></svg>
+          </button>
+        }
+        <button class="filter-btn" [class.active]="f.filterGpw()" (click)="f.toggleFilter('gpw')">PL</button>
+        <button class="filter-btn" [class.active]="f.filterUs()" (click)="f.toggleFilter('us')">US</button>
+        <button class="filter-btn" [class.active]="f.forexState() !== 'off'" [class.partial]="f.forexState() === 'partial'" (click)="f.toggleForexFilter()">
+          FOREX
+          @if (f.forexState() === 'partial') {
+            <span class="warn-icon" title="Niepelny wybor par forex">⚠</span>
+          }
+        </button>
+        <div class="dir-filter">
+          <button class="dir-btn dir-long" [class.active]="f.filterLong()" (click)="f.filterLong.set(!f.filterLong())">LONG</button>
+          <button class="dir-btn dir-short" [class.active]="f.filterShort()" (click)="f.filterShort.set(!f.filterShort())">SHORT</button>
+        </div>
+      </div>
+
+      <a routerLink="/backtest-fib" class="backtest-link" title="Backtest Fibonacci">📊</a>
+
+      <button class="settings-btn" [class.open]="f.showSettings()" (click)="f.showSettings.set(!f.showSettings())" title="Ustawienia skanowania">⚙</button>
+
+      <button class="btn-scan" (click)="runScan()" [disabled]="loading()">SKANUJ</button>
+    </div>
+    @if (loading()) {
+      <div class="scan-progress"><div class="scan-progress-bar"></div></div>
+    }
+  </header>
+
+  <!-- SETTINGS PANEL -->
+  @if (f.showSettings()) {
+    <div class="settings-panel">
+      <div class="settings-section">
+        <h4>FOREX PARY</h4>
+        <div class="fx-groups">
+          <button class="fx-group-btn" [class.all]="f.majorState() === 'all'" [class.some]="f.majorState() === 'some'" (click)="f.toggleGroup(f.FOREX_MAJOR)">
+            MAJOR
+          </button>
+          <button class="fx-group-btn" [class.all]="f.minorState() === 'all'" [class.some]="f.minorState() === 'some'" (click)="f.toggleGroup(f.FOREX_MINOR)">
+            MINOR
+          </button>
+          <button class="fx-group-btn" [class.all]="f.plnState() === 'all'" [class.some]="f.plnState() === 'some'" (click)="f.toggleGroup(f.FOREX_PLN)">
+            PLN
+          </button>
+        </div>
+        <div class="fx-pairs">
+          @for (p of f.FOREX_MAJOR; track p) {
+            <button class="fx-chip" [class.selected]="f.isPairSelected(p)" (click)="f.togglePair(p)">{{ p }}</button>
+          }
+          <span class="fx-sep"></span>
+          @for (p of f.FOREX_MINOR; track p) {
+            <button class="fx-chip" [class.selected]="f.isPairSelected(p)" (click)="f.togglePair(p)">{{ p }}</button>
+          }
+          <span class="fx-sep"></span>
+          @for (p of f.FOREX_PLN; track p) {
+            <button class="fx-chip chip-pln" [class.selected]="f.isPairSelected(p)" (click)="f.togglePair(p)">{{ p }}</button>
+          }
+        </div>
+      </div>
+
+      <div class="settings-row">
+        <div class="settings-section settings-sm">
+          <h4>GPW &mdash; PLYNNOSC</h4>
+          <label class="setting-field">
+            <span>Dni:</span>
+            <input type="number" [ngModel]="f.turnoverDays()" (ngModelChange)="f.turnoverDays.set($event)" min="1" max="60">
+          </label>
+          <label class="setting-field">
+            <span>Min obrot:</span>
+            <input type="number" [ngModel]="f.minTurnover()" (ngModelChange)="f.minTurnover.set($event)" min="0" step="100000">
+          </label>
+        </div>
+        <div class="settings-section settings-sm">
+          <h4>USA</h4>
+          <label class="setting-field">
+            <span>Top N:</span>
+            <input type="number" [ngModel]="f.usTopN()" (ngModelChange)="f.usTopN.set($event)" min="10" max="500">
+          </label>
+        </div>
+      </div>
+    </div>
+  }
+
+  @if (loading()) {
+    <div class="loading-panel">
+      <div class="pulse-ring"></div>
+      <p class="loading-title">Szukanie impulsow i retracementow...</p>
+      <p class="loading-sub">D1 &middot; Fibonacci 23.6 / 38.2 / 50 / 61.8 / 78.6 &middot; ~2-5min</p>
+    </div>
+  }
+
+  @if (error()) {
+    <div class="error-bar">{{ error() }}</div>
+  }
+
+  @if (filtered(); as d) {
+    <div class="results-meta">
+      <div class="results-top-row">
+        <span class="results-count">{{ totalCount }} walorow z impulsem Fibonacci</span>
+        @if (loadedFromDb() && !loading()) {
+          <span class="db-hint">zaladowano z bazy &middot; {{ formatScanTime() }}</span>
+        }
+      </div>
+
+      @if (data()?.hasPreviousScan) {
+        <div class="change-filter-bar">
+          <span class="change-filter-label">ZMIANY:</span>
+          <button class="change-btn change-new" [class.active]="f.isChangeFilterActive('NEW')" (click)="f.toggleChangeFilter('NEW')"
+                  title="Nowe walory, ktorych nie bylo w poprzednim skanie">
+            ★ NOWE <span class="change-count">{{ changeStats().new_ }}</span>
+          </button>
+          <button class="change-btn change-up" [class.active]="f.isChangeFilterActive('MOVED_UP')" (click)="f.toggleChangeFilter('MOVED_UP')"
+                  title="Walory ktore awansowaly do wyzszej kolumny">
+            ↑ AWANS <span class="change-count">{{ changeStats().movedUp }}</span>
+          </button>
+          <button class="change-btn change-down" [class.active]="f.isChangeFilterActive('MOVED_DOWN')" (click)="f.toggleChangeFilter('MOVED_DOWN')"
+                  title="Walory ktore spadly do nizszej kolumny">
+            ↓ SPADEK <span class="change-count">{{ changeStats().movedDown }}</span>
+          </button>
+          <button class="change-btn change-same" [class.active]="f.isChangeFilterActive('UNCHANGED')" (click)="f.toggleChangeFilter('UNCHANGED')"
+                  title="Walory bez zmian wzgledem poprzedniego skanu">
+            BEZ ZMIAN <span class="change-count">{{ changeStats().unchanged }}</span>
+          </button>
+
+          @if (changeStats().dropped > 0) {
+            <button class="change-btn change-dropped" [class.active]="f.showDropped()" (click)="f.showDropped.set(!f.showDropped())"
+                    title="Walory ktore wypadly z skanera Fibonacci">
+              ✗ WYPADLY <span class="change-count">{{ changeStats().dropped }}</span>
+            </button>
+          }
+
+          @if (f.changeDirty()) {
+            <button class="clear-btn clear-btn-sm" (click)="f.clearChangeFilters()" title="Resetuj filtry zmian">
+              <svg viewBox="0 0 24 24" fill="currentColor"><path d="M19.36 2.72l1.42 1.42-5.72 5.71c1.07 1.54 1.22 3.39.32 4.59L9.06 8.12c1.2-.9 3.05-.75 4.59.32l5.71-5.72zM5.93 17.57c-2.01-2.01-3.24-4.41-3.58-6.65l4.88-2.09 7.44 7.44-2.09 4.88c-2.24-.34-4.64-1.57-6.65-3.58z"/></svg>
+            </button>
+          }
+        </div>
+        <div class="prev-scan-info">
+          vs poprzedni: {{ formatPreviousScanTime() }}
+        </div>
+      }
+    </div>
+
+    <div class="fib-grid">
+
+      <!-- KOLUMNA I — IMPULS -->
+      <div class="fib-column">
+        <div class="fib-col-header col1-header">
+          <div class="col-number">I</div>
+          <div class="col-info">
+            <h2>Impuls</h2>
+            <span class="col-freq">retracement &lt; 10%</span>
+          </div>
+          <span class="col-count">{{ d.column1.length }}</span>
+        </div>
+        <div class="fib-col-body">
+          @for (e of d.column1; track e.symbol) {
+            <div class="fib-card" [class.card-alert]="hasAlert(e)" [class.card-new]="e.changeStatus === 'NEW'" [class.card-moved-up]="e.changeStatus === 'MOVED_UP'" [class.card-moved-down]="e.changeStatus === 'MOVED_DOWN'" (click)="openChart(e.symbol)">
+              <div class="card-top">
+                <span class="card-symbol">
+                  @if (e.changeStatus && e.changeStatus !== 'UNCHANGED') {
+                    <span class="change-badge" [class.badge-new]="e.changeStatus === 'NEW'" [class.badge-up]="e.changeStatus === 'MOVED_UP'" [class.badge-down]="e.changeStatus === 'MOVED_DOWN'"
+                          [title]="e.previousColumn ? 'z ' + columnLabel(e.previousColumn) : ''">
+                      {{ changeStatusIcon(e.changeStatus) }} {{ changeStatusLabel(e.changeStatus) }}
+                    </span>
+                  }
+                  {{ e.symbol }}
+                </span>
+                <div class="card-tags">
+                  <span class="chart-icon" (mouseenter)="onChartIconEnter(e.symbol, $event)" (mouseleave)="onChartIconLeave()" (click)="$event.stopPropagation()" title="Wykres Fibonacci">⊞</span>
+                  <span class="dir-tag" [class.long]="e.direction === 'BULLISH'" [class.short]="e.direction === 'BEARISH'">{{ dirLabel(e) }}</span>
+                  <span class="market-tag" [class.gpw]="e.market === 'GPW'" [class.us]="e.market === 'US'" [class.forex]="e.market === 'FOREX'">{{ e.market }}</span>
+                </div>
+              </div>
+              <div class="card-price">{{ e.lastClose | number:'1.2-4' }}</div>
+              <div class="card-impulse">
+                <span class="pill impulse-pill">{{ e.impulsePct | number:'1.1-1' }}% &middot; {{ e.impulseDays }}d</span>
+              </div>
+              <div class="card-fib-levels">
+                <span class="fib-label">Fib 50%:</span>
+                <span class="fib-value">{{ e.fib500 | number:'1.2-4' }}</span>
+              </div>
+              @if (e.patterns.length > 0) {
+                <div class="card-patterns">
+                  @for (p of e.patterns; track p) {
+                    <span class="pattern-tag">{{ p }}</span>
+                  }
+                </div>
+              }
+            </div>
+          }
+          @if (d.column1.length === 0) { <div class="col-empty">Brak walorow</div> }
+        </div>
+      </div>
+
+      <!-- KOLUMNA II — ZAWRACA -->
+      <div class="fib-column">
+        <div class="fib-col-header col2-header">
+          <div class="col-number">II</div>
+          <div class="col-info">
+            <h2>Zawraca</h2>
+            <span class="col-freq">retracement 10-45%</span>
+          </div>
+          <span class="col-count">{{ d.column2.length }}</span>
+        </div>
+        <div class="fib-col-body">
+          @for (e of d.column2; track e.symbol) {
+            <div class="fib-card" [class.card-alert]="hasAlert(e)" [class.card-new]="e.changeStatus === 'NEW'" [class.card-moved-up]="e.changeStatus === 'MOVED_UP'" [class.card-moved-down]="e.changeStatus === 'MOVED_DOWN'" (click)="openChart(e.symbol)">
+              <div class="card-top">
+                <span class="card-symbol">
+                  @if (e.changeStatus && e.changeStatus !== 'UNCHANGED') {
+                    <span class="change-badge" [class.badge-new]="e.changeStatus === 'NEW'" [class.badge-up]="e.changeStatus === 'MOVED_UP'" [class.badge-down]="e.changeStatus === 'MOVED_DOWN'"
+                          [title]="e.previousColumn ? 'z ' + columnLabel(e.previousColumn) : ''">
+                      {{ changeStatusIcon(e.changeStatus) }} {{ changeStatusLabel(e.changeStatus) }}
+                    </span>
+                  }
+                  {{ e.symbol }}
+                </span>
+                <div class="card-tags">
+                  <span class="chart-icon" (mouseenter)="onChartIconEnter(e.symbol, $event)" (mouseleave)="onChartIconLeave()" (click)="$event.stopPropagation()" title="Wykres Fibonacci">⊞</span>
+                  <span class="dir-tag" [class.long]="e.direction === 'BULLISH'" [class.short]="e.direction === 'BEARISH'">{{ dirLabel(e) }}</span>
+                  <span class="market-tag" [class.gpw]="e.market === 'GPW'" [class.us]="e.market === 'US'" [class.forex]="e.market === 'FOREX'">{{ e.market }}</span>
+                </div>
+              </div>
+              <div class="card-price">{{ e.lastClose | number:'1.2-4' }}</div>
+              <div class="card-retrace">
+                <span class="pill retrace-pill">Retracement: {{ e.retracementPct | number:'1.1-1' }}%</span>
+                <span class="dim">blisko {{ e.nearestFibLevel }}</span>
+              </div>
+              <div class="card-fib-levels">
+                <span class="fib-label">Fib 50%:</span>
+                <span class="fib-value">{{ e.fib500 | number:'1.2-4' }}</span>
+                <span class="fib-dist">({{ e.distToFib50Pct | number:'1.2-2' }}%)</span>
+              </div>
+              <div class="card-impulse-sub">
+                <span class="dim">Impuls: {{ e.impulsePct | number:'1.1-1' }}% &middot; {{ e.impulseDays }}d</span>
+              </div>
+              @if (e.patterns.length > 0) {
+                <div class="card-patterns">
+                  @for (p of e.patterns; track p) {
+                    <span class="pattern-tag">{{ p }}</span>
+                  }
+                </div>
+              }
+            </div>
+          }
+          @if (d.column2.length === 0) { <div class="col-empty">Brak walorow</div> }
+        </div>
+      </div>
+
+      <!-- KOLUMNA III — FIB 50% -->
+      <div class="fib-column">
+        <div class="fib-col-header col3-header">
+          <div class="col-number">III</div>
+          <div class="col-info">
+            <h2>Fib 50%</h2>
+            <span class="col-freq">w okolicach 50% impulsu</span>
+          </div>
+          <span class="col-count">{{ d.column3.length }}</span>
+        </div>
+        <div class="fib-col-body">
+          @for (e of d.column3; track e.symbol) {
+            <div class="fib-card card-fib50" [class.card-alert]="hasAlert(e)" [class.card-new]="e.changeStatus === 'NEW'" [class.card-moved-up]="e.changeStatus === 'MOVED_UP'" [class.card-moved-down]="e.changeStatus === 'MOVED_DOWN'" (click)="openChart(e.symbol)">
+              <div class="card-top">
+                <span class="card-symbol">
+                  @if (e.fibBounce && e.inPlay) { <span class="alert-badge in-play-icon" title="W GRZE — pattern na 61.8%, SL nie wybity">⚡</span> }
+                  @if (e.fibBounce && !e.inPlay) { <span class="alert-badge sl-hit-icon" title="SL wybity">✗</span> }
+                  @if (e.changeStatus && e.changeStatus !== 'UNCHANGED') {
+                    <span class="change-badge" [class.badge-new]="e.changeStatus === 'NEW'" [class.badge-up]="e.changeStatus === 'MOVED_UP'" [class.badge-down]="e.changeStatus === 'MOVED_DOWN'"
+                          [title]="e.previousColumn ? 'z ' + columnLabel(e.previousColumn) : ''">
+                      {{ changeStatusIcon(e.changeStatus) }} {{ changeStatusLabel(e.changeStatus) }}
+                    </span>
+                  }
+                  {{ e.symbol }}
+                </span>
+                <div class="card-tags">
+                  <span class="chart-icon" (mouseenter)="onChartIconEnter(e.symbol, $event)" (mouseleave)="onChartIconLeave()" (click)="$event.stopPropagation()" title="Wykres Fibonacci">⊞</span>
+                  <span class="dir-tag" [class.long]="e.direction === 'BULLISH'" [class.short]="e.direction === 'BEARISH'">{{ dirLabel(e) }}</span>
+                  <span class="market-tag" [class.gpw]="e.market === 'GPW'" [class.us]="e.market === 'US'" [class.forex]="e.market === 'FOREX'">{{ e.market }}</span>
+                  <span class="fib50-badge">50%</span>
+                </div>
+              </div>
+              <div class="card-price">{{ e.lastClose | number:'1.2-4' }}</div>
+              @if (e.fibBounce && e.inPlay) {
+                <div class="fib-bounce-alert in-play">
+                  <span class="bounce-icon">⚡</span>
+                  <span>W GRZE — SL: {{ e.stopLoss | number:'1.2-4' }}</span>
+                </div>
+              }
+              @if (e.fibBounce && !e.inPlay) {
+                <div class="fib-bounce-alert sl-hit">
+                  <span class="bounce-icon">✗</span>
+                  <span>SL WYBITY ({{ e.stopLoss | number:'1.2-4' }})</span>
+                </div>
+              }
+              @if (e.patterns.length > 0) {
+                <div class="card-patterns">
+                  @for (p of e.patterns; track p) {
+                    <span class="pattern-tag" [class.pattern-alert]="e.inPlay">{{ p }}</span>
+                  }
+                </div>
+              }
+              <div class="fib-detail-grid">
+                <div class="fib-row">
+                  <span class="fib-lbl">Fib 38.2%</span>
+                  <span class="fib-val">{{ e.fib382 | number:'1.2-4' }}</span>
+                </div>
+                <div class="fib-row fib-row-active">
+                  <span class="fib-lbl">Fib 50%</span>
+                  <span class="fib-val">{{ e.fib500 | number:'1.2-4' }}</span>
+                  <span class="fib-dist-badge">{{ e.distToFib50Pct | number:'1.2-2' }}%</span>
+                </div>
+                <div class="fib-row">
+                  <span class="fib-lbl">Fib 61.8%</span>
+                  <span class="fib-val">{{ e.fib618 | number:'1.2-4' }}</span>
+                </div>
+              </div>
+              <div class="card-impulse-sub">
+                <span class="dim">Impuls: {{ e.impulsePct | number:'1.1-1' }}% &middot; {{ e.impulseDays }}d &middot; Retr. {{ e.retracementPct | number:'1.1-1' }}%</span>
+              </div>
+            </div>
+          }
+          @if (d.column3.length === 0) { <div class="col-empty">Brak walorow</div> }
+        </div>
+      </div>
+    </div>
+
+    <!-- DROPPED SYMBOLS -->
+    @if (f.showDropped() && filteredDropped().length > 0) {
+      <div class="dropped-section">
+        <div class="dropped-header">
+          <span class="dropped-title">WYPADLY Z FIBONACCI</span>
+          <span class="dropped-count">{{ filteredDropped().length }}</span>
+        </div>
+        <div class="dropped-grid">
+          @for (e of filteredDropped(); track e.symbol) {
+            <div class="dropped-card" (click)="openChart(e.symbol)">
+              <span class="card-symbol">{{ e.symbol }}</span>
+              <div class="card-tags">
+                <span class="dir-tag" [class.long]="e.direction === 'BULLISH'" [class.short]="e.direction === 'BEARISH'">{{ dirLabelDropped(e) }}</span>
+                <span class="market-tag" [class.gpw]="e.market === 'GPW'" [class.us]="e.market === 'US'" [class.forex]="e.market === 'FOREX'">{{ e.market }}</span>
+                <span class="dropped-from-badge">z {{ columnLabel(e.previousColumn) }}</span>
+              </div>
+              <div class="card-price dim">{{ e.lastClose | number:'1.2-4' }}</div>
+            </div>
+          }
+        </div>
+      </div>
+    }
+  }
+
+  <!-- CHART POPUP -->
+  @if (chartSymbol()) {
+    <div class="chart-overlay" (click)="closeChart()"></div>
+    <div class="chart-popup" (mouseenter)="onChartPopupEnter()" (mouseleave)="onChartPopupLeave()">
+      <div class="chart-popup-header">
+        <span class="chart-popup-title">{{ chartSymbol() }}</span>
+        <div class="chart-legend">
+          <span class="legend-item legend-impulse">Impuls</span>
+          <span class="legend-item legend-fib236">23.6%</span>
+          <span class="legend-item legend-fib382">38.2%</span>
+          <span class="legend-item legend-fib500">50%</span>
+          <span class="legend-item legend-fib618">61.8%</span>
+          <span class="legend-item legend-fib786">78.6%</span>
+          <span class="legend-item legend-sl">SL</span>
+        </div>
+        <button class="chart-popup-close" (click)="closeChart()">×</button>
+      </div>
+      @if (chartLoading()) {
+        <div class="chart-loading">
+          <div class="chart-spinner"></div>
+          <span>Ladowanie danych...</span>
+        </div>
+      } @else {
+        <div class="chart-container" id="fib-chart-container"></div>
+      }
+    </div>
+  }
+
+  <!-- LOG -->
+  @if (data()?.log; as fullLog) {
+    <div class="log-section">
+      <button class="log-toggle" (click)="showLog.set(!showLog())">
+        <span class="log-toggle-icon">{{ showLog() ? '▾' : '▸' }}</span>
+        <span class="log-toggle-title">DZIENNIK ANALIZY</span>
+        <span class="log-stats">
+          <span class="ls-ok">✓ {{ logStats().ok }}</span>
+          <span class="ls-skip">○ {{ logStats().noSignal }}</span>
+          <span class="ls-fail">✗ {{ logStats().failed }}</span>
+          <span class="ls-total">Σ {{ logStats().total }}</span>
+        </span>
+      </button>
+      @if (showLog()) {
+        <div class="log-body">
+          @for (e of fullLog; track e.symbol) {
+            <span class="log-entry" [attr.data-status]="e.status">
+              <span class="log-icon">{{ statusIcon(e.status) }}</span>
+              <span class="log-sym">{{ e.symbol }}</span>
+              <span class="log-mkt">{{ e.market }}</span>
+              @if (e.detail) { <span class="log-detail">{{ e.detail }}</span> }
+            </span>
+          }
+        </div>
+      }
+    </div>
+  }
+
+  <footer class="criteria-box">
+    <h3>Fibonacci Impulse &mdash; zasady</h3>
+    <div class="criteria-grid">
+      <div class="criteria-item ci-col1">
+        <span class="criteria-label">I &mdash; Impuls</span>
+        <span class="criteria-desc">Najdluzszy impuls z ostatnich 6 msc (min. 10% ruchu). Retracement ponizej 10% — trend nadal mocny.</span>
+      </div>
+      <div class="criteria-item ci-col2">
+        <span class="criteria-label">II &mdash; Zawraca</span>
+        <span class="criteria-desc">Kurs cofnal sie o 10-45% wysokosci impulsu. Korekta w toku, zbliza sie do poziomow Fibonacci.</span>
+      </div>
+      <div class="criteria-item ci-col3">
+        <span class="criteria-label">III &mdash; Fib 50% + ❗ sygnal</span>
+        <span class="criteria-desc">Kurs w okolicach 50%. Jesli zszedl pod 61.8% i wrocil + pattern price action (Bulkowski) = sygnal ❗</span>
+      </div>
+    </div>
+    <p class="footer-note">
+      Forex: TwelveData &middot; GPW/US: Yahoo Finance &middot; Fibonacci 23.6 / 38.2 / 50 / 61.8 / 78.6 &middot; D1
+      <br>Price action: Bullish/Bearish Engulfing, Harami, Morning/Evening Star, Hammer, Shooting Star
+    </p>
+  </footer>
+</div>

@@ -1,0 +1,163 @@
+<app-nav-bar active="ichimoku"></app-nav-bar>
+<div class="backtest">
+  <div class="header">
+    <div class="header-brand">
+      <div class="logo-mark"></div>
+      <div>
+        <h1 class="title">BACKTEST</h1>
+        <span class="subtitle">Trojpolowka &middot; Kolumna III "w grze" &middot; Trailing SL</span>
+      </div>
+    </div>
+    <a routerLink="/" class="nav-link">&larr; Skaner</a>
+  </div>
+
+  <!-- CONFIG -->
+  <div class="config-bar">
+    <div class="btn-group">
+      <button class="filter-btn" [class.active]="filterGpw()" (click)="filterGpw.update(v => !v)">PL</button>
+      <button class="filter-btn" [class.active]="filterUs()" (click)="filterUs.update(v => !v)">US</button>
+      <button class="filter-btn" [class.active]="filterForex()" (click)="filterForex.update(v => !v)">FOREX</button>
+    </div>
+    <label class="field">
+      <span>US Top N:</span>
+      <input type="number" [ngModel]="usTopN()" (ngModelChange)="usTopN.set($event)" min="10" max="500">
+    </label>
+    <label class="field">
+      <span>Od:</span>
+      <input type="date" [ngModel]="dateFrom()" (ngModelChange)="dateFrom.set($event)">
+    </label>
+    <label class="field">
+      <span>Do:</span>
+      <input type="date" [ngModel]="dateTo()" (ngModelChange)="dateTo.set($event)">
+    </label>
+    <button class="run-btn" (click)="runBacktest()" [disabled]="loading()">
+      @if (loading()) { <span class="spinner"></span> Backtest... } @else { Uruchom backtest }
+    </button>
+  </div>
+
+  @if (loading()) {
+    <div class="loading-bar">Backtest w toku... pobieranie danych i symulacja. To moze potrwac kilka minut.</div>
+  }
+  @if (error()) { <div class="error-bar">{{ error() }}</div> }
+
+  <!-- RESULTS -->
+  @if (data(); as d) {
+    @if (elapsed() > 0) { <div class="elapsed-bar">Wykonano w {{ elapsed() }}s &middot; {{ d.totalTrades }} transakcji</div> }
+
+    <!-- RESULT FILTERS -->
+    <div class="result-filters">
+      <span class="filter-label">Wyniki:</span>
+      <div class="btn-group">
+        <button class="filter-btn" [class.active]="showGpw()" (click)="showGpw.update(v => !v)">PL</button>
+        <button class="filter-btn" [class.active]="showUs()" (click)="showUs.update(v => !v)">US</button>
+        <button class="filter-btn" [class.active]="showForex()" (click)="showForex.update(v => !v)">FOREX</button>
+      </div>
+      <div class="btn-group">
+        <button class="dir-btn dir-long" [class.active]="showLong()" (click)="showLong.update(v => !v)">LONG</button>
+        <button class="dir-btn dir-short" [class.active]="showShort()" (click)="showShort.update(v => !v)">SHORT</button>
+      </div>
+      <span class="filter-count">{{ filteredTrades().length }} / {{ d.totalTrades }}</span>
+    </div>
+
+    @if (filteredStats(); as s) {
+    <div class="summary-grid">
+      <div class="stat-card">
+        <span class="stat-value">{{ s.totalTrades }}</span>
+        <span class="stat-label">Transakcje</span>
+      </div>
+      <div class="stat-card win">
+        <span class="stat-value">{{ s.winRatePct | number:'1.1-1' }}%</span>
+        <span class="stat-label">Win rate</span>
+      </div>
+      <div class="stat-card">
+        <span class="stat-value" [class.positive]="s.avgReturnPct > 0" [class.negative]="s.avgReturnPct < 0">{{ s.avgReturnPct | number:'1.2-2' }}%</span>
+        <span class="stat-label">Avg return</span>
+      </div>
+      <div class="stat-card">
+        <span class="stat-value" [class.positive]="s.avgRMultiple > 0" [class.negative]="s.avgRMultiple < 0">{{ s.avgRMultiple | number:'1.2-2' }}R</span>
+        <span class="stat-label">Avg R:R</span>
+      </div>
+      <div class="stat-card">
+        <span class="stat-value">{{ s.profitFactor | number:'1.2-2' }}</span>
+        <span class="stat-label">Profit Factor</span>
+      </div>
+      <div class="stat-card loss">
+        <span class="stat-value">{{ s.maxDrawdownPct | number:'1.2-2' }}%</span>
+        <span class="stat-label">Max loss (trade)</span>
+      </div>
+      <div class="stat-card">
+        <span class="stat-value">{{ s.slHitRatePct | number:'1.1-1' }}%</span>
+        <span class="stat-label">SL hit rate</span>
+      </div>
+      <div class="stat-card">
+        <span class="stat-value">{{ s.avgHoldingDays | number:'1.0-0' }}d</span>
+        <span class="stat-label">Avg holding</span>
+      </div>
+      <div class="stat-card win">
+        <span class="stat-value">{{ s.avgWinPct | number:'1.2-2' }}%</span>
+        <span class="stat-label">Avg win</span>
+      </div>
+      <div class="stat-card loss">
+        <span class="stat-value">{{ s.avgLossPct | number:'1.2-2' }}%</span>
+        <span class="stat-label">Avg loss</span>
+      </div>
+    </div>
+    }
+
+    @if (d.errors.length > 0) {
+      <details class="errors-section">
+        <summary>Bledy ({{ d.errors.length }})</summary>
+        <ul>@for (e of d.errors; track $index) { <li>{{ e }}</li> }</ul>
+      </details>
+    }
+
+    <!-- TRADE TABLE -->
+    @if (d.trades.length > 0) {
+      <div class="table-wrap">
+        <table class="trades-table">
+          <thead>
+            <tr>
+              <th (click)="setSort('symbol')">Symbol{{ sortIcon('symbol') }}</th>
+              <th (click)="setSort('direction')">Dir{{ sortIcon('direction') }}</th>
+              <th (click)="setSort('entryDate')">Entry{{ sortIcon('entryDate') }}</th>
+              <th (click)="setSort('entryPrice')">Cena wej.{{ sortIcon('entryPrice') }}</th>
+              <th (click)="setSort('initialSl')">SL init{{ sortIcon('initialSl') }}</th>
+              <th (click)="setSort('exitDate')">Exit{{ sortIcon('exitDate') }}</th>
+              <th (click)="setSort('exitPrice')">Cena wyj.{{ sortIcon('exitPrice') }}</th>
+              <th (click)="setSort('exitReason')">Powod{{ sortIcon('exitReason') }}</th>
+              <th (click)="setSort('holdingDays')">Dni{{ sortIcon('holdingDays') }}</th>
+              <th (click)="setSort('returnPct')">Return%{{ sortIcon('returnPct') }}</th>
+              <th (click)="setSort('rMultiple')">R{{ sortIcon('rMultiple') }}</th>
+              <th (click)="setSort('slTrailCount')">Trail{{ sortIcon('slTrailCount') }}</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (t of sortedTrades(); track $index) {
+              <tr [class.win-row]="t.returnPct > 0" [class.loss-row]="t.returnPct <= 0">
+                <td class="sym-cell">
+                  <span class="market-dot" [attr.data-market]="t.market"></span>
+                  @if (t.stooqUrl) {
+                    <a [href]="t.stooqUrl" target="_blank" class="sym-link" title="Wykres na Stooq">{{ t.symbol }}</a>
+                  } @else {
+                    {{ t.symbol }}
+                  }
+                </td>
+                <td><span class="dir-pill" [class.long]="t.direction === 'LONG'" [class.short]="t.direction === 'SHORT'">{{ t.direction }}</span></td>
+                <td>{{ t.entryDate }}</td>
+                <td>{{ t.entryPrice | number:'1.2-4' }}</td>
+                <td>{{ t.initialSl | number:'1.2-4' }}</td>
+                <td>{{ t.exitDate }}</td>
+                <td>{{ t.exitPrice | number:'1.2-4' }}</td>
+                <td><span class="reason-pill" [attr.data-reason]="t.exitReason">{{ t.exitReason === 'SL_HIT' ? 'SL' : 'OPEN' }}</span></td>
+                <td>{{ t.holdingDays }}</td>
+                <td [class.positive]="t.returnPct > 0" [class.negative]="t.returnPct <= 0">{{ t.returnPct | number:'1.2-2' }}%</td>
+                <td [class.positive]="t.rMultiple > 0" [class.negative]="t.rMultiple <= 0">{{ t.rMultiple | number:'1.2-2' }}</td>
+                <td>{{ t.slTrailCount }}</td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    }
+  }
+</div>

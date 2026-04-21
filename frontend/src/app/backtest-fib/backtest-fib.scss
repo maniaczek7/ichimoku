@@ -1,0 +1,173 @@
+@use '../shared/variables' as *;
+
+:host { display: block; background: $bg; color: $text; min-height: 100vh; font-family: $font-primary; }
+
+.backtest { max-width: 1440px; margin: 0 auto; padding: 0 20px 48px; }
+
+// ━━━ HEADER ━━━
+.header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 24px 0 20px; border-bottom: 1px solid $border; margin-bottom: 20px;
+}
+.header-brand { display: flex; align-items: center; gap: 14px; }
+.logo-mark {
+  width: 40px; height: 40px; border-radius: 10px;
+  background: linear-gradient(135deg, $accent, $amber);
+  box-shadow: 0 4px 16px rgba($accent, .25);
+}
+.title { margin: 0; font-size: 22px; font-weight: 800; letter-spacing: 1px; }
+.subtitle { font-size: 12px; color: $text-dim; }
+.nav-link {
+  color: $accent; text-decoration: none; font-size: 13px; font-weight: 600;
+  padding: 6px 14px; border: 1px solid rgba($accent, .3); border-radius: 6px;
+  transition: all .15s;
+  &:hover { background: rgba($accent, .1); }
+}
+
+// ━━━ CONFIG BAR ━━━
+.config-bar {
+  display: flex; align-items: center; gap: 16px; flex-wrap: wrap;
+  padding: 14px 16px; background: $surface; border: 1px solid $border;
+  border-radius: 10px; margin-bottom: 20px;
+}
+.btn-group { display: flex; gap: 6px; }
+.filter-btn {
+  padding: 7px 16px; border-radius: 6px; font-size: 12px; font-weight: 600;
+  background: $surface2; border: 1px solid $border; color: $text-dim;
+  cursor: pointer; transition: all .2s; letter-spacing: .5px;
+  &:hover { border-color: $text-dim; }
+  &.active { background: $accent; color: #fff; border-color: $accent; box-shadow: 0 2px 8px rgba($accent, .3); }
+}
+.dir-btn {
+  padding: 7px 12px; border-radius: 6px; font-size: 11px; font-weight: 700;
+  background: $surface2; border: 1px solid $border; color: $text-dim; cursor: pointer;
+  transition: all .2s; letter-spacing: .5px;
+  &:hover { border-color: $text-dim; }
+  &.dir-long.active { color: $green; border-color: $green; background: rgba($green, .1); box-shadow: 0 2px 8px rgba($green, .15); }
+  &.dir-short.active { color: $red; border-color: $red; background: rgba($red, .1); box-shadow: 0 2px 8px rgba($red, .15); }
+}
+.field {
+  display: flex; align-items: center; gap: 6px; font-size: 12px; color: $text-dim;
+  span { white-space: nowrap; }
+  input {
+    background: $surface2; border: 1px solid $border; border-radius: 5px;
+    color: $text; padding: 4px 8px; font-size: 12px;
+  }
+  input[type="number"] { width: 65px; }
+  input[type="date"] { width: 130px; color-scheme: dark; }
+}
+.run-btn {
+  margin-left: auto; padding: 8px 20px; border: none; border-radius: 8px;
+  background: linear-gradient(135deg, $accent, #2563eb);
+  color: white; font-weight: 700; font-size: 13px; cursor: pointer;
+  transition: all .15s; display: flex; align-items: center; gap: 8px;
+  &:hover:not(:disabled) { filter: brightness(1.1); transform: translateY(-1px); }
+  &:disabled { opacity: .6; cursor: wait; }
+}
+.spinner {
+  width: 14px; height: 14px; border: 2px solid rgba(white, .3); border-top-color: white;
+  border-radius: 50%; animation: spin .6s linear infinite; display: inline-block;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+.loading-bar {
+  background: rgba($accent, .08); border: 1px solid rgba($accent, .2); color: $accent;
+  padding: 12px 16px; border-radius: 8px; font-size: 13px; margin-bottom: 16px;
+  animation: pulse 1.5s ease-in-out infinite;
+}
+@keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: .6; } }
+.elapsed-bar {
+  background: rgba($green, .06); border: 1px solid rgba($green, .15); color: $text-dim;
+  padding: 8px 16px; border-radius: 8px; font-size: 12px; margin-bottom: 16px;
+}
+.error-bar {
+  background: rgba($red, .1); border: 1px solid rgba($red, .3); color: $red;
+  padding: 10px 16px; border-radius: 8px; font-size: 13px; margin-bottom: 16px;
+}
+
+// ━━━ RESULT FILTERS ━━━
+.result-filters {
+  display: flex; align-items: center; gap: 14px; flex-wrap: wrap;
+  padding: 10px 16px; background: $surface; border: 1px solid $border;
+  border-radius: 8px; margin-bottom: 14px;
+}
+.filter-label { font-size: 11px; color: $text-dim; font-weight: 700; text-transform: uppercase; letter-spacing: .5px; }
+.filter-count { margin-left: auto; font-size: 12px; color: $text-dim; font-weight: 600; }
+
+// ━━━ SUMMARY GRID ━━━
+.summary-grid {
+  display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; margin-bottom: 20px;
+}
+.stat-card {
+  background: $surface; border: 1px solid $border; border-radius: 10px;
+  padding: 14px 16px; text-align: center;
+  &.win { border-color: rgba($green, .3); }
+  &.loss { border-color: rgba($red, .3); }
+}
+.stat-value {
+  display: block; font-size: 20px; font-weight: 800; letter-spacing: .5px;
+  &.positive { color: $green; }
+  &.negative { color: $red; }
+}
+.stat-label { font-size: 11px; color: $text-dim; text-transform: uppercase; letter-spacing: .5px; }
+
+// ━━━ ERRORS ━━━
+.errors-section {
+  background: $surface; border: 1px solid $border; border-radius: 8px;
+  padding: 10px 16px; margin-bottom: 16px; font-size: 12px;
+  summary { cursor: pointer; color: $text-dim; font-weight: 600; }
+  ul { margin: 8px 0 0; padding-left: 18px; color: $text-dim; }
+}
+
+// ━━━ TABLE ━━━
+.table-wrap { overflow-x: auto; border-radius: 10px; border: 1px solid $border; }
+.trades-table {
+  width: 100%; border-collapse: collapse; font-size: 12px;
+  th {
+    background: $surface2; color: $text-dim; font-weight: 700; text-transform: uppercase;
+    letter-spacing: .5px; padding: 10px 12px; text-align: left; cursor: pointer;
+    white-space: nowrap; user-select: none; border-bottom: 1px solid $border;
+    &:hover { color: $text; }
+  }
+  td {
+    padding: 8px 12px; border-bottom: 1px solid rgba($border, .5);
+    white-space: nowrap;
+  }
+  .positive { color: $green; font-weight: 600; }
+  .negative { color: $red; font-weight: 600; }
+}
+.win-row { background: rgba($green, .03); }
+.loss-row { background: rgba($red, .03); }
+
+.sym-cell { font-weight: 700; display: flex; align-items: center; gap: 6px; }
+.sym-link {
+  color: $accent; text-decoration: none; border-bottom: 1px dashed rgba($accent, .3);
+  transition: all .15s;
+  &:hover { color: #5b9cf6; border-bottom-color: $accent; }
+}
+.market-dot {
+  width: 7px; height: 7px; border-radius: 50%;
+  &[data-market="GPW"] { background: $accent; }
+  &[data-market="US"] { background: $amber; }
+  &[data-market="FOREX"] { background: $green; }
+}
+.dir-pill {
+  font-size: 10px; font-weight: 700; padding: 2px 6px; border-radius: 4px;
+  &.long { background: rgba($green, .12); color: $green; }
+  &.short { background: rgba($red, .12); color: $red; }
+}
+.reason-pill {
+  font-size: 10px; font-weight: 700; padding: 2px 6px; border-radius: 4px;
+  background: rgba($text-dim, .1); color: $text-dim;
+  &[data-reason="SL_HIT"] { background: rgba($red, .1); color: $red; }
+  &[data-reason="TP_HIT"] { background: rgba($green, .1); color: $green; }
+  &[data-reason="DATA_END"] { background: rgba($accent, .1); color: $accent; }
+}
+
+// ━━━ STRATEGY BOX ━━━
+.strategy-box {
+  margin-top: 32px; padding: 20px; border-radius: 12px;
+  background: $surface; border: 1px solid $border;
+  h3 { font-size: 14px; margin: 0 0 10px; letter-spacing: .5px; }
+  p { font-size: 12px; color: $text-dim; margin: 4px 0; line-height: 1.5; }
+}

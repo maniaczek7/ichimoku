@@ -1,0 +1,39 @@
+@use '../../shared/variables' as *;
+
+.nav-bar {
+  display: flex;
+  gap: 2px;
+  padding: 12px 20px 0;
+  max-width: 1440px;
+  margin: 0 auto;
+}
+
+.nav-tab {
+  padding: 10px 28px;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 2px;
+  text-decoration: none;
+  color: $text-dim;
+  background: $surface;
+  border: 1px solid $border;
+  border-bottom: none;
+  border-radius: 8px 8px 0 0;
+  cursor: pointer;
+  transition: all 0.2s;
+
+  &:hover {
+    color: $text;
+    background: $surface2;
+  }
+
+  &.active {
+    color: $accent;
+    background: $bg;
+    border-color: $border;
+    border-bottom: 2px solid $bg;
+    position: relative;
+    z-index: 1;
+    margin-bottom: -1px;
+  }
+}

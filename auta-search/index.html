@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+<meta charset="UTF-8">
+<title>AUTA.CH - Zaawansowane Filtry - Setup</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: 'Segoe UI', system-ui, sans-serif;
+    background: #0f1117; color: #e4e6ef;
+    display: flex; justify-content: center; padding: 40px 20px;
+  }
+  .box {
+    max-width: 700px; width: 100%;
+    background: #1a1d27; border-radius: 12px; border: 1px solid #2e3346;
+    padding: 40px;
+  }
+  h1 { color: #4f8cff; font-size: 24px; margin-bottom: 8px; }
+  .sub { color: #8b90a5; margin-bottom: 30px; font-size: 14px; }
+  .step {
+    margin-bottom: 24px; padding: 16px 20px;
+    background: #242836; border-radius: 8px; border-left: 3px solid #4f8cff;
+  }
+  .step h3 { color: #4f8cff; font-size: 15px; margin-bottom: 8px; }
+  .step p { color: #c8cad7; font-size: 14px; line-height: 1.6; }
+  code {
+    background: #12141d; padding: 2px 8px; border-radius: 4px;
+    color: #2ecc71; font-size: 13px; word-break: break-all;
+  }
+  .bookmarklet-link {
+    display: inline-block;
+    background: #4f8cff; color: #fff; text-decoration: none;
+    padding: 12px 24px; border-radius: 8px; font-size: 16px; font-weight: 600;
+    margin: 10px 0; cursor: grab;
+  }
+  .bookmarklet-link:hover { background: #3a7ae8; }
+  .console-code {
+    display: block; background: #12141d; padding: 12px 16px;
+    border-radius: 6px; color: #2ecc71; font-size: 12px;
+    margin-top: 10px; word-break: break-all; user-select: all;
+    cursor: text; border: 1px solid #2e3346;
+  }
+  .or { text-align: center; color: #555; margin: 16px 0; font-size: 13px; }
+  .features {
+    margin-top: 24px; padding: 16px 20px;
+    background: #242836; border-radius: 8px;
+  }
+  .features h3 { color: #f39c12; margin-bottom: 10px; font-size: 15px; }
+  .features ul { list-style: none; }
+  .features li {
+    padding: 4px 0; color: #c8cad7; font-size: 13px;
+  }
+  .features li::before { content: "- "; color: #4f8cff; }
+</style>
+</head>
+<body>
+<div class="box">
+  <h1>AUTA.CH - Zaawansowane Filtry</h1>
+  <p class="sub">Lepsze wyszukiwanie na auta.ch z filtrami po marce, modelu, roku, przebiegu i wiele wiecej.</p>
+
+  <div class="step">
+    <h3>Krok 1 - Serwer dziala</h3>
+    <p>Serwer jest uruchomiony na <code>http://localhost:8777</code>. Nie zamykaj tego okna terminala.</p>
+  </div>
+
+  <div class="step">
+    <h3>Krok 2 - Otworz auta.ch</h3>
+    <p>Otworz w przegladarce: <a href="https://auta.ch/auctions?page=1&recommended=false&popular=false&recent=false&sortDir=asc&sortBy=endTime&type=all" target="_blank" style="color:#4f8cff">https://auta.ch/auctions</a></p>
+  </div>
+
+  <div class="step">
+    <h3>Krok 3a - Bookmarklet (jednorazowa konfiguracja)</h3>
+    <p>Przeciagnij ten przycisk na pasek zakladek:</p>
+    <p>
+      <a class="bookmarklet-link"
+         href="javascript:void(document.body.appendChild(document.createElement('script')).src='http://localhost:8777/inject.js?'+Date.now())">
+        AUTA Filtry
+      </a>
+    </p>
+    <p>Potem na stronie auta.ch kliknij zakladke "AUTA Filtry".</p>
+  </div>
+
+  <div class="or">— lub —</div>
+
+  <div class="step">
+    <h3>Krok 3b - Wklej w konsole (F12)</h3>
+    <p>Na stronie auta.ch nacisnij <code>F12</code>, przejdz na zakladke <code>Console</code>, wklej i Enter:</p>
+    <code class="console-code">fetch('http://localhost:8777/inject.js?'+Date.now()).then(r=>r.text()).then(eval)</code>
+  </div>
+
+  <div class="features">
+    <h3>Dostepne filtry</h3>
+    <ul>
+      <li>Wyszukiwanie tekstowe z logika AND/OR (przecinek = LUB, spacja = I)</li>
+      <li>Np. <code>skoda octavia</code> albo <code>skoda, porsche</code></li>
+      <li>Chipy marek z dynamiczna liczba wynikow</li>
+      <li>Rok produkcji (od-do)</li>
+      <li>Przebieg max (km)</li>
+      <li>Typ pojazdu (samochody, motocykle, ciezarowe)</li>
+      <li>Dostawca (BCP, AXA)</li>
+      <li>Min. liczba licytacji</li>
+      <li>Max czas do konca aukcji (w godzinach, np. 24 = 1 dzien)</li>
+      <li>Max obserwujacych (pokaz tylko mniej popularne)</li>
+      <li>Sortowanie: czas, rok, przebieg, licytacje, obserwujacy, cena</li>
+      <li>Paginacja z wyborem ilosci na strone (25, 50, 100, 200)</li>
+      <li>Szybki podglad aukcji - zdjecia, cena, szczegoly bez opuszczania listy</li>
+    </ul>
+  </div>
+</div>
+</body>
+</html>

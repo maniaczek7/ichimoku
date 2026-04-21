@@ -4,6 +4,7 @@ backend/.gradle/
 backend/data/
 *.class
 *.jar
+!backend/gradle/wrapper/gradle-wrapper.jar
 *.war
 
 # Node / Angular

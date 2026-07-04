@@ -9,5 +9,5 @@ import { RouterLink } from '@angular/router';
   styleUrl: './nav-bar.scss'
 })
 export class NavBar {
-  active = input<'ichimoku' | 'fibonacci'>('ichimoku');
+  active = input<'ichimoku' | 'fibonacci' | 'ichimoku2'>('ichimoku');
 }

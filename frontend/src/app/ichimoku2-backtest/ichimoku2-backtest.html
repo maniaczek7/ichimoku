@@ -1,0 +1,49 @@
+<app-nav-bar active="ichimoku2"></app-nav-bar>
+<div class="backtest">
+  <div class="header">
+    <div class="header-brand"><div class="logo-mark"></div><div><h1 class="title">BACKTEST ICHIMOKU 2</h1></div></div>
+    <a routerLink="/ichimoku2" class="nav-link">&larr; Skaner</a>
+  </div>
+  <div class="tab-bar">
+    <button class="filter-btn" [class.active]="activeTab()==='ichimoku2'" (click)="activeTab.set('ichimoku2')">ICHIMOKU 2</button>
+    <button class="filter-btn" disabled title="Wkrotce">FIBO — wkrotce</button>
+  </div>
+  <div class="config-bar">
+    <button class="filter-btn" [class.active]="filterGpw()" (click)="filterGpw.update(v=>!v)">PL</button>
+    <button class="filter-btn" [class.active]="filterUs()" (click)="filterUs.update(v=>!v)">US</button>
+    <button class="filter-btn" [class.active]="filterForex()" (click)="filterForex.update(v=>!v)">FOREX</button>
+    <label class="field"><span>US Top:</span><input type="number" [ngModel]="usTopN()" (ngModelChange)="usTopN.set($event)"></label>
+    <label class="field"><span>SL:</span>
+      <select [ngModel]="slMethod()" (ngModelChange)="slMethod.set($event)">
+        <option value="CONFIRMED_LOWS">Potwierdzone dolki</option>
+        <option value="CONFIRMED_SHADOWS">Potwierdzone cienie</option>
+      </select>
+    </label>
+    <button class="run-btn" (click)="run()" [disabled]="loading()">Uruchom</button>
+  </div>
+  @if (loading()) { <div class="loading-bar">Backtest w toku...</div> }
+  @if (error()) { <div class="error-bar">{{ error() }}</div> }
+  @if (data(); as d) {
+    <div class="summary-grid">
+      <div class="stat-card"><span class="stat-value">{{ d.totalTrades }}</span><span class="stat-label">Trades</span></div>
+      <div class="stat-card win"><span class="stat-value">{{ d.winRatePct | number:'1.1-1' }}%</span><span class="stat-label">Win rate</span></div>
+      <div class="stat-card"><span class="stat-value">{{ d.avgRMultiple | number:'1.2-2' }}R</span><span class="stat-label">Avg R</span></div>
+      <div class="stat-card"><span class="stat-value">{{ d.profitViaSlCount }}</span><span class="stat-label">Profit via SL</span></div>
+    </div>
+    <table class="trades-table">
+      <thead><tr><th>Symbol</th><th>Dir</th><th>Entry</th><th>SL init</th><th>Exit</th><th>%</th><th>R</th><th>Trails</th><th>Profit SL</th></tr></thead>
+      <tbody>
+        @for (t of sorted(); track t.symbol + t.entryDate) {
+          <tr [class.win-row]="t.returnPct > 0">
+            <td>{{ t.symbol }}</td><td>{{ t.direction }}</td><td>{{ t.entryDate }}</td>
+            <td>{{ t.initialSl | number:'1.2-4' }} ({{ t.initialSlType }})</td>
+            <td>{{ t.exitDate }} / {{ t.exitReason }}</td>
+            <td [class.positive]="t.returnPct>0" [class.negative]="t.returnPct<0">{{ t.returnPct | number:'1.2-2' }}%</td>
+            <td>{{ t.rMultiple | number:'1.2-2' }}</td><td>{{ t.slTrailCount }}</td>
+            <td>{{ t.profitViaSl ? '✓' : '' }}</td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  }
+</div>

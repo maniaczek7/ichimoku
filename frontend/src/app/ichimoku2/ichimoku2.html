@@ -1,0 +1,98 @@
+<app-nav-bar active="ichimoku2"></app-nav-bar>
+<div class="screener i2">
+  <header class="header">
+    <div class="header-brand">
+      <div class="logo-mark"></div>
+      <div class="brand-text">
+        <h1>ICHIMOKU <span>2</span></h1>
+        <p class="tagline">Tokeny chmury &middot; 4 msc &middot; D1</p>
+      </div>
+    </div>
+    <div class="header-actions">
+      <div class="filter-bar">
+        <button class="filter-btn" [class.active]="f.filterGpw()" (click)="f.toggleFilter('gpw')">PL</button>
+        <button class="filter-btn" [class.active]="f.filterUs()" (click)="f.toggleFilter('us')">US</button>
+        <button class="filter-btn" [class.active]="f.forexState() !== 'off'" (click)="f.toggleForexFilter()">FOREX</button>
+        <div class="dir-filter">
+          <button class="dir-btn dir-long" [class.active]="f.filterLong()" (click)="f.filterLong.set(!f.filterLong())">LONG</button>
+          <button class="dir-btn dir-short" [class.active]="f.filterShort()" (click)="f.filterShort.set(!f.filterShort())">SHORT</button>
+        </div>
+      </div>
+      <a routerLink="/ichimoku2/backtest" class="backtest-link" title="Backtest">📊</a>
+      <button class="btn-scan" (click)="runScan()" [disabled]="loading()">SKANUJ</button>
+    </div>
+  </header>
+
+  @if (loading()) { <div class="scan-progress"><div class="scan-progress-bar"></div></div> }
+  @if (error()) { <div class="error-bar">{{ error() }}</div> }
+
+  @if (filtered(); as d) {
+    <div class="trojpolowka-grid">
+      <div class="tp-column">
+        <div class="tp-col-header col1-header"><div class="col-number">I</div><div class="col-info"><h2>Przed chmura</h2></div><span class="col-count">{{ d.c1.length }}</span></div>
+        <div class="tp-col-body">
+          @for (e of d.c1; track e.symbol) {
+            <div class="tp-card">
+              <div class="card-top"><span class="card-symbol">{{ e.symbol }}</span><span class="dir-tag" [class.long]="e.direction==='LONG'" [class.short]="e.direction==='SHORT'">{{ e.direction==='LONG'?'▲':'▼' }}</span></div>
+              <div class="card-meta"><span class="token-badge">{{ tokenLabel(e.token) }}</span><span>{{ e.cloudDays }}d</span></div>
+            </div>
+          }
+        </div>
+      </div>
+      <div class="tp-column">
+        <div class="tp-col-header col2-header"><div class="col-number">II</div><div class="col-info"><h2>W chmurze</h2></div><span class="col-count">{{ d.c2.length }}</span></div>
+        <div class="tp-col-body">
+          @for (e of d.c2; track e.symbol) {
+            <div class="tp-card card-incloud">
+              <div class="card-top"><span class="card-symbol">{{ e.symbol }}</span><span class="dir-tag" [class.long]="e.direction==='LONG'" [class.short]="e.direction==='SHORT'">{{ e.direction==='LONG'?'▲':'▼' }}</span></div>
+              <div class="card-meta"><span class="token-badge">☁ {{ e.cloudDays }}d</span></div>
+            </div>
+          }
+        </div>
+      </div>
+      <div class="tp-column">
+        <div class="tp-col-header col3-header"><div class="col-number">III</div><div class="col-info"><h2>Sygnal wejscia</h2></div><span class="col-count">{{ d.c3.length }}</span></div>
+        <div class="tp-col-body">
+          @for (e of d.c3; track e.symbol) {
+            <div class="tp-card card-inplay">
+              <div class="card-top"><span class="card-symbol">{{ e.symbol }}</span>
+                <span class="score-dots">@for (on of scoreDots(e.score); track $index) { <span class="dot" [class.on]="on"></span> }</span>
+              </div>
+              <div class="card-meta"><span class="token-badge signal">{{ tokenLabel(e.token) }}</span>
+                @if (e.kumoTwist) { <span class="sig">KT</span> } @if (e.chikouConfirms) { <span class="sig">CH</span> }
+              </div>
+            </div>
+          }
+        </div>
+      </div>
+    </div>
+
+    <div class="trash-section">
+      <div class="trash-header" (click)="showTrash.set(!showTrash())">
+        <span>ŚMIETNIK</span><span class="trash-toggle">{{ showTrash() ? '▼' : '▶' }}</span>
+      </div>
+      @if (showTrash()) {
+        <div class="trojpolowka-grid trash-grid">
+          @for (col of [{l:d.t1,n:'I'},{l:d.t2,n:'II'},{l:d.t3,n:'III'}]; track col.n) {
+            <div class="tp-column">
+              <div class="tp-col-header"><h2>Wypadli z {{ col.n }}</h2><span class="col-count">{{ col.l.length }}</span></div>
+              <div class="tp-col-body">
+                @for (t of col.l; track t.id) {
+                  <div class="tp-card trash-card">
+                    <div class="card-top"><span class="card-symbol">{{ t.symbol }}</span>
+                      <button class="dismiss-btn" (click)="dismissTrash(t.id, $event)">✕</button>
+                    </div>
+                    <div class="card-meta trash-meta">
+                      <span>{{ t.dropReason }}</span>
+                      <span>{{ t.firstSeenAt | date:'dd.MM.yy' }} → {{ t.droppedAt | date:'dd.MM.yy' }}</span>
+                    </div>
+                  </div>
+                }
+              </div>
+            </div>
+          }
+        </div>
+      }
+    </div>
+  }
+</div>
